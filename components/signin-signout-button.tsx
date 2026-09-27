@@ -19,7 +19,7 @@ const SigninButton = () => {
       setUser(user);
     };
     fetchUser();
-  }, []);
+  }, [supabase.auth]);
   if (user) {
     return (
       <NavUser
