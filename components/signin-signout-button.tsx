@@ -5,9 +5,10 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { signout } from "@/lib/auth-actions";
 import {NavUser} from "@/components/nav-user";
+import { User } from "@supabase/supabase-js";
 
 const SigninButton = () => {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const router = useRouter();
   const supabase = createClient();
   useEffect(() => {
@@ -24,7 +25,7 @@ const SigninButton = () => {
       <NavUser
         user={user}
         logoutAction={async () => {
-          signout();
+          await signout();
           setUser(null);
         }}
       />
