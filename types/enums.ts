@@ -105,3 +105,17 @@ export const OfficerStatusSchema = z.enum(
     ...string[]
   ]
 )
+
+export const yearLevelAnalyticsSchema = z.object({
+  yearLevel: z.number().int(),
+  count: z.number().int(),
+});
+
+export const analyticsSchema = z.object({
+  totalStudents: z.number(),
+  totalDepartments: z.number(),
+  totalPrograms: z.number(),
+  byYearLevel: z.array(yearLevelAnalyticsSchema),
+});
+
+export type Analytics = z.infer<typeof analyticsSchema>;
