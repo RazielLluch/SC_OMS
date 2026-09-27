@@ -16,9 +16,7 @@ import {
 import { Input } from "@/components/ui/input"
 import {signup_org} from "@/lib/auth-actions";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
-
-
-// TODO: Implement student, faculty, and org signup
+import React from "react";
 
 
 export function SignupOrgForm({

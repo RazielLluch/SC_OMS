@@ -4,6 +4,7 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import {TooltipProvider} from "@/components/ui/tooltip";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import React from "react";
 
 const inter = Inter({subsets:['latin'],variable:'--font-sans'});
 
