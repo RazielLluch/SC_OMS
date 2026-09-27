@@ -4,6 +4,7 @@ import {SectionCards} from "@/app/(sidebar)/students/components/section-cards";
 import {getStudents, getAnalytics} from "@/lib/students-api";
 import {analyticsSchema} from "@/types/enums";
 
+export const dynamic = "force-dynamic";
 
 export default async function Page(){
 
