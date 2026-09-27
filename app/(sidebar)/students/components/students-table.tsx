@@ -94,7 +94,7 @@ import {
 import { GripVerticalIcon, EllipsisVerticalIcon, Columns3Icon, ChevronDownIcon, PlusIcon, ChevronsLeftIcon, ChevronLeftIcon, ChevronRightIcon, ChevronsRightIcon, TrendingUpIcon } from "lucide-react"
 
 export const schema = z.object({
-  studentId: z.string().uuid(),
+  studentId: z.uuid(),
   studentNumber: z.string(),
   fullName: z.string(),
   email: z.string(),
