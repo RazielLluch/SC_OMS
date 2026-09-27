@@ -1,6 +1,5 @@
 import {StudentsTable} from "@/app/(sidebar)/students/components/students-table";
 import React from "react";
-import {z} from "zod";
 import {SectionCards} from "@/app/(sidebar)/students/components/section-cards";
 import {getStudents, getAnalytics} from "@/lib/students-api";
 import {analyticsSchema} from "@/types/enums";
