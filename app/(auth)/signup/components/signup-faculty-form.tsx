@@ -19,9 +19,6 @@ import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/c
 import React from "react";
 
 
-// TODO: Implement student, faculty, and org signup
-
-
 export function SignupFacultyForm({
                                className,
                                ...props
