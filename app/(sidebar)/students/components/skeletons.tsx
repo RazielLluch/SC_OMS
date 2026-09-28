@@ -18,7 +18,7 @@ export function SkeletonSectionCards() {
       </Card>
       <Card className="@container/card">
         <CardHeader>
-          <CardDescription>New Customers</CardDescription>
+          <CardDescription>Total Departments</CardDescription>
           <Skeleton className="w-40 h-10"/>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
@@ -28,7 +28,7 @@ export function SkeletonSectionCards() {
       </Card>
       <Card className="@container/card">
         <CardHeader>
-          <CardDescription>Active Accounts</CardDescription>
+          <CardDescription>Total Programs</CardDescription>
           <Skeleton className="w-40 h-10"/>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
@@ -38,7 +38,7 @@ export function SkeletonSectionCards() {
       </Card>
       <Card className="@container/card">
         <CardHeader>
-          <CardDescription>Growth Rate</CardDescription>
+          <CardDescription>Largest Cohort</CardDescription>
           <Skeleton className="w-40 h-10"/>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
