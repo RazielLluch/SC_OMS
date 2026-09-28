@@ -21,7 +21,13 @@ function getOrdinalSuffix(value: number) {
   }
 }
 
-export function AnalyticsCards({data}: { data: Analytics }) {
+export function AnalyticsCards({
+                                 data,
+                                 context = "all departments and programs",
+                               }: {
+  data: Analytics;
+  context?: string;
+}) {
   const largestCohort = data.byYearLevel.reduce(
     (largest, cohort) => cohort.count > largest.count ? cohort : largest,
     {yearLevel: 0, count: 0},
@@ -45,7 +51,7 @@ export function AnalyticsCards({data}: { data: Analytics }) {
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <div className="font-medium">Current student population</div>
-          <div className="text-muted-foreground">Across all departments and programs</div>
+          <div className="text-muted-foreground">Across {context}</div>
         </CardFooter>
       </Card>
       <Card className="@container/card">
@@ -60,7 +66,7 @@ export function AnalyticsCards({data}: { data: Analytics }) {
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <div className="font-medium">Departments with students</div>
-          <div className="text-muted-foreground">Available in the student directory</div>
+          <div className="text-muted-foreground">Within the current view</div>
         </CardFooter>
       </Card>
       <Card className="@container/card">
@@ -75,7 +81,7 @@ export function AnalyticsCards({data}: { data: Analytics }) {
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <div className="font-medium">Programs represented</div>
-          <div className="text-muted-foreground">Academic programs in the directory</div>
+          <div className="text-muted-foreground">Represented in the current view</div>
         </CardFooter>
       </Card>
       <Card className="@container/card">
@@ -97,7 +103,7 @@ export function AnalyticsCards({data}: { data: Analytics }) {
               : "Distribution is unavailable"}
           </div>
           {largestCohort.count > 0 && (
-            <div className="text-muted-foreground">{largestCohortShare}% of all students</div>
+            <div className="text-muted-foreground">{largestCohortShare}% of current view</div>
           )}
         </CardFooter>
       </Card>
