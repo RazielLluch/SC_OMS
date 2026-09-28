@@ -96,7 +96,7 @@ import { StudentImport } from "@/app/(sidebar)/students/components/student-impor
 import { AnalyticsCards } from "@/app/(sidebar)/students/components/analytics-cards"
 import type { Analytics } from "@/types/enums"
 
-// TODO: Implement Per Department View for students table
+// TODO: Implement Per Department (WIP) View for students table
 
 export const schema = z.object({
   studentId: z.uuid(),
@@ -560,7 +560,7 @@ export function StudentsTable({
           items={[
             { label: "Outline", value: "outline" },
             { label: "Per Program", value: "per-program" },
-            { label: "Per Department", value: "per-department" },
+            { label: "Per Department (WIP)", value: "per-department" },
             { label: "Per Year", value: "per-year" },
           ]}
         >
@@ -575,7 +575,7 @@ export function StudentsTable({
             <SelectGroup>
               <SelectItem value="outline">Outline</SelectItem>
               <SelectItem value="per-program">Per Program</SelectItem>
-              <SelectItem value="per-department">Per Department</SelectItem>
+              <SelectItem value="per-department">Per Department (WIP)</SelectItem>
               <SelectItem value="per-year">Per Year</SelectItem>
             </SelectGroup>
           </SelectContent>
@@ -586,7 +586,7 @@ export function StudentsTable({
             Per Program
           </TabsTrigger>
           <TabsTrigger value="per-department">
-            Per Department
+            Per Department (WIP)
           </TabsTrigger>
           <TabsTrigger value="per-year">Per Year</TabsTrigger>
         </TabsList>
