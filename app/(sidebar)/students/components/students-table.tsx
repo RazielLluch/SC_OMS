@@ -31,6 +31,7 @@ import {
   useReactTable,
   type ColumnDef,
   type ColumnFiltersState,
+  type HeaderContext,
   type Row,
   type SortingState,
   type VisibilityState,
@@ -90,7 +91,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs"
-import { GripVerticalIcon, EllipsisVerticalIcon, Columns3Icon, ChevronDownIcon, ChevronsLeftIcon, ChevronLeftIcon, ChevronRightIcon, ChevronsRightIcon, TrendingUpIcon } from "lucide-react"
+import { GripVerticalIcon, EllipsisVerticalIcon, Columns3Icon, ChevronDownIcon, ChevronsLeftIcon, ChevronLeftIcon, ChevronRightIcon, ChevronsRightIcon, TrendingUpIcon, ArrowDownIcon, ArrowUpIcon, ArrowUpDownIcon } from "lucide-react"
 import { StudentImport } from "@/app/(sidebar)/students/components/student-import"
 import { AnalyticsCards } from "@/app/(sidebar)/students/components/analytics-cards"
 import type { Analytics } from "@/types/enums"
@@ -113,6 +114,30 @@ type Student = z.infer<typeof schema>
 
 function getStudentProgram(student: Partial<Student>) {
   return student.program ?? student.programCode ?? student.program_code ?? ""
+}
+
+function SortableColumnHeader<TData>({
+  column,
+  title,
+}: HeaderContext<TData, unknown> & { title: string }) {
+  const sorted = column.getIsSorted()
+
+  return (
+    <Button
+      variant="ghost"
+      className="-ml-3 h-8 px-3"
+      onClick={() => column.toggleSorting(sorted === "asc" ? true : false)}
+    >
+      {title}
+      {sorted === "asc" ? (
+        <ArrowUpIcon className="ml-2 size-4" />
+      ) : sorted === "desc" ? (
+        <ArrowDownIcon className="ml-2 size-4" />
+      ) : (
+        <ArrowUpDownIcon className="ml-2 size-4 text-muted-foreground" />
+      )}
+    </Button>
+  )
 }
 
 // Create a separate component for the drag handle
@@ -168,7 +193,9 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
   },
   {
     accessorKey: "studentNumber",
-    header: "Student Number",
+    header: (context) => (
+      <SortableColumnHeader {...context} title="Student Number" />
+    ),
     cell: ({ row }) => {
       return <TableCellViewer item={row.original} />
     },
@@ -176,7 +203,9 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
   },
   {
     accessorKey: "fullName",
-    header: "Full Name",
+    header: (context) => (
+      <SortableColumnHeader {...context} title="Full Name" />
+    ),
     cell: ({ row }) => (
       <div className="w-32">
         {row.original.fullName}
@@ -184,8 +213,11 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
     ),
   },
   {
-    accessorKey: "program",
-    header: "Program",
+    id: "program",
+    accessorFn: (row) => getStudentProgram(row),
+    header: (context) => (
+      <SortableColumnHeader {...context} title="Program" />
+    ),
     cell: ({ row }) => (
       <div className="w-24">
         {getStudentProgram(row.original) || "—"}
@@ -194,7 +226,9 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
   },
   {
     accessorKey: "email",
-    header: "Email",
+    header: (context) => (
+      <SortableColumnHeader {...context} title="Email" />
+    ),
     cell: ({ row }) => (
       <div className="w-32">
         {(row.original.email)}
@@ -203,7 +237,9 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
   },
   {
     accessorKey: "yearLevel",
-    header: "Year Level",
+    header: (context) => (
+      <SortableColumnHeader {...context} title="Year Level" />
+    ),
     cell: ({ row }) => (
       <div className="flex justify-center w-10">
         {row.original.yearLevel}
@@ -286,7 +322,9 @@ export function StudentsTable({
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
   )
-  const [sorting, setSorting] = React.useState<SortingState>([])
+  const [sorting, setSorting] = React.useState<SortingState>([
+    { id: "studentNumber", desc: false },
+  ])
   const [pagination, setPagination] = React.useState({
     pageIndex: 0,
     pageSize: 10,
