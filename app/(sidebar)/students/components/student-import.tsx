@@ -7,15 +7,15 @@ import { FileUp, PlusIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from "@/components/ui/drawer";
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -64,7 +64,18 @@ const reasonLabels: Record<string, string> = {
   duplicate_student_number: "Duplicate student number in this file",
   unsupported_file_format: "Unsupported file format",
   missing_required_columns: "Required columns are missing",
+  already_up_to_date: "Already up to date",
+  update_not_confirmed: "Update was not confirmed",
+  save_conflict: "Could not save because the record changed",
 };
+
+const yearLevelOptions = [
+  { value: "1", label: "1" },
+  { value: "2", label: "2" },
+  { value: "3", label: "3" },
+  { value: "4", label: "4" },
+  { value: "5", label: "5+" },
+];
 
 function normalizeHeader(value: unknown) {
   return String(value ?? "").trim().toLowerCase().replace(/[\s-]+/g, "_");
@@ -109,6 +120,27 @@ function resultPayload(value: unknown): ImportResult {
 
 function statusLabel(status: string) {
   return status.replaceAll("_", " ");
+}
+
+function resultRowClass(result: ImportResultRow | undefined) {
+  if (!result) return "";
+  if (result.status === "failed" || result.reasons.some((reason) => reason.startsWith("missing_") || reason.startsWith("invalid_") || reason === "unknown_program_code" || reason === "duplicate_student_number")) {
+    return "bg-destructive/10 hover:bg-destructive/15";
+  }
+  if (result.status === "existing_with_changes") {
+    return "bg-amber-500/10 hover:bg-amber-500/15";
+  }
+  if (result.status === "existing_no_changes" || result.reasons.includes("already_up_to_date")) {
+    return "bg-emerald-500/10 hover:bg-emerald-500/15";
+  }
+  return "";
+}
+
+function resultBadgeVariant(result: ImportResultRow) {
+  if (result.status === "failed") return "destructive" as const;
+  if (result.status === "existing_with_changes") return "default" as const;
+  if (result.status === "existing_no_changes" || result.reasons.includes("already_up_to_date")) return "outline" as const;
+  return "secondary" as const;
 }
 
 export function StudentImport() {
@@ -201,19 +233,19 @@ export function StudentImport() {
 
   return (
     <div className="flex items-center gap-2">
-      <Drawer open={importOpen} onOpenChange={setImportOpen}>
-        <DrawerTrigger render={<Button variant="outline" size="sm" />}>
+      <Dialog open={importOpen} onOpenChange={setImportOpen}>
+        <DialogTrigger render={<Button variant="outline" size="sm" />}>
           <FileUp data-icon="inline-start" />
           Import students
-        </DrawerTrigger>
-        <DrawerContent className="max-h-[90vh]">
-          <DrawerHeader>
-            <DrawerTitle>Import students</DrawerTitle>
-            <DrawerDescription>
+        </DialogTrigger>
+        <DialogContent className="max-w-6xl">
+          <DialogHeader>
+            <DialogTitle>Import students</DialogTitle>
+            <DialogDescription>
               Upload a CSV or Excel file with student_number, full_name, program_code, and year_level columns.
-            </DrawerDescription>
-          </DrawerHeader>
-          <div className="overflow-y-auto px-4">
+            </DialogDescription>
+          </DialogHeader>
+          <div className="min-h-0 overflow-y-auto px-6 py-4">
             <Input
               type="file"
               accept=".csv,.xlsx,.xls"
@@ -239,23 +271,39 @@ export function StudentImport() {
                       const checked = result?.rows[index];
                       const wasEdited = draft.original !== null && !sameRow(row, draft.original);
                       return (
-                        <tr key={`${row.row_number}-${index}`} className="border-b last:border-0 align-top">
+                        <tr key={`${row.row_number}-${index}`} className={`border-b last:border-0 align-top ${resultRowClass(checked)}`}>
                           <td className="p-2">{row.row_number}</td>
                           <td className="p-2"><Input value={row.student_number} onChange={(event) => updateRow(index, "student_number", event.target.value)} aria-label={`Student number for row ${row.row_number}`} /></td>
                           <td className="p-2"><Input value={row.full_name} onChange={(event) => updateRow(index, "full_name", event.target.value)} aria-label={`Full name for row ${row.row_number}`} /></td>
                           <td className="p-2"><Input value={row.program_code} onChange={(event) => updateRow(index, "program_code", event.target.value.toUpperCase())} aria-label={`Program for row ${row.row_number}`} /></td>
-                          <td className="p-2"><Input type="number" min="1" value={Number.isNaN(row.year_level) ? "" : row.year_level} onChange={(event) => updateRow(index, "year_level", event.target.value)} aria-label={`Year level for row ${row.row_number}`} /></td>
+                          <td className="p-2">
+                            <Select
+                              value={Number.isNaN(row.year_level) ? "" : String(row.year_level)}
+                              onValueChange={(value) => updateRow(index, "year_level", value ?? "")}
+                            >
+                              <SelectTrigger aria-label={`Year level for row ${row.row_number}`}>
+                                <SelectValue placeholder="Year" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {yearLevelOptions.map((option) => (
+                                  <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </td>
                           <td className="p-2">
                             <div className="flex flex-wrap gap-1">
                             {draft.isAdded && <Badge variant="outline">Added after upload</Badge>}
                             {wasEdited && <Badge variant="outline">Edited after upload</Badge>}
                             {checked ? (
                               <div className="flex flex-wrap gap-1">
-                                <Badge variant={checked.status === "failed" ? "destructive" : "secondary"}>{statusLabel(checked.status)}</Badge>
+                                <Badge variant={resultBadgeVariant(checked)}>{statusLabel(checked.status)}</Badge>
+                                {checked.status === "existing_with_changes" && <span className="text-xs font-medium text-amber-700 dark:text-amber-300">Existing student will be updated</span>}
+                                {(checked.status === "existing_no_changes" || checked.reasons.includes("already_up_to_date")) && <span className="text-xs font-medium text-emerald-700 dark:text-emerald-300">No database changes needed</span>}
                                 {checked.reasons.map((reason) => <span key={reason} className="text-xs text-destructive">{reasonLabels[reason] ?? reason}</span>)}
                                 {checked.changedFields.length > 0 && <span className="text-xs text-muted-foreground">Changes: {checked.changedFields.join(", ")}</span>}
                               </div>
-                            ) : "Not checked"}
+                            ) : "N/A"}
                             </div>
                           </td>
                           <td className="p-2"><Button type="button" variant="ghost" size="sm" onClick={() => removeImportRow(index)}>Remove</Button></td>
@@ -278,7 +326,7 @@ export function StudentImport() {
               </label>
             )}
           </div>
-          <DrawerFooter>
+          <DialogFooter>
             <Button onClick={() => void reviewRows()} disabled={loading || rows.length === 0}>{loading ? "Checking..." : "Check import"}</Button>
             <Button
               onClick={() => void commitRows()}
@@ -286,10 +334,10 @@ export function StudentImport() {
             >
               {loading ? "Importing..." : "Commit students"}
             </Button>
-            <DrawerClose render={<Button variant="outline" />}>Close</DrawerClose>
-          </DrawerFooter>
-        </DrawerContent>
-      </Drawer>
+            <DialogClose render={<Button variant="outline" />}>Close</DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <ManualStudent open={manualOpen} onOpenChange={setManualOpen} />
     </div>
   );
@@ -309,6 +357,7 @@ function ManualStudent({ open, onOpenChange }: { open: boolean; onOpenChange: (o
   const complete = row.student_number.length > 0 && row.full_name.length > 0
     && row.program_code.length > 0 && Number.isInteger(row.year_level) && row.year_level > 0;
   const checking = complete && check === null;
+  const existingStudent = check?.status === "existing_no_changes" || check?.status === "existing_with_changes";
 
   React.useEffect(() => {
     if (!open || !complete) {
@@ -357,21 +406,44 @@ function ManualStudent({ open, onOpenChange }: { open: boolean; onOpenChange: (o
   }
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <Button variant="outline" size="sm" onClick={() => onOpenChange(true)}><PlusIcon data-icon="inline-start" /> Add student</Button>
-      <DrawerContent>
-        <DrawerHeader><DrawerTitle>Add student</DrawerTitle><DrawerDescription>Enter one student&apos;s information.</DrawerDescription></DrawerHeader>
-        <div className="grid gap-4 px-4">
-          <div className="grid gap-2"><Label htmlFor="manual_student_number">Student number</Label><Input id="manual_student_number" value={row.student_number} onChange={(event) => updateField("student_number", event.target.value.trim())} placeholder="2021-0001" /></div>
-          <div className="grid gap-2"><Label htmlFor="manual_full_name">Full name</Label><Input id="manual_full_name" value={row.full_name} onChange={(event) => updateField("full_name", event.target.value)} /></div>
-          <div className="grid gap-2"><Label htmlFor="manual_program_code">Program</Label><Select value={row.program_code} onValueChange={(value) => updateField("program_code", value ?? "")}><SelectTrigger id="manual_program_code"><SelectValue placeholder="Select program" /></SelectTrigger><SelectContent><SelectItem value="BSCS">BSCS</SelectItem><SelectItem value="BSIT">BSIT</SelectItem><SelectItem value="BSIS">BSIS</SelectItem><SelectItem value="BSCA">BSCA</SelectItem></SelectContent></Select></div>
-          <div className="grid gap-2"><Label htmlFor="manual_year_level">Year level</Label><Input id="manual_year_level" type="number" min="1" value={Number.isNaN(row.year_level) ? "" : row.year_level} onChange={(event) => updateField("year_level", event.target.value)} /></div>
+      <DialogContent>
+        <DialogHeader><DialogTitle>Add student</DialogTitle><DialogDescription>Enter one student&apos;s information.</DialogDescription></DialogHeader>
+        <div className="grid gap-4 overflow-y-auto px-6 py-4">
+          <div className="grid min-w-0 gap-2"><Label htmlFor="manual_student_number">Student number</Label><Input className="w-full" id="manual_student_number" value={row.student_number} onChange={(event) => updateField("student_number", event.target.value.trim())} placeholder="2021-0001" /></div>
+          <div className="grid min-w-0 gap-2"><Label htmlFor="manual_full_name">Full name</Label><Input className="w-full" id="manual_full_name" value={row.full_name} onChange={(event) => updateField("full_name", event.target.value)} /></div>
+          <div className="grid min-w-0 gap-4 sm:grid-cols-2">
+            <div className="grid min-w-0 gap-2"><Label htmlFor="manual_program_code">Program</Label><Select value={row.program_code} onValueChange={(value) => updateField("program_code", value ?? "")}><SelectTrigger className="w-full" id="manual_program_code"><SelectValue placeholder="Select program" /></SelectTrigger><SelectContent><SelectItem value="BSCS">BSCS</SelectItem><SelectItem value="BSIT">BSIT</SelectItem><SelectItem value="BSIS">BSIS</SelectItem><SelectItem value="BSCA">BSCA</SelectItem></SelectContent></Select></div>
+            <div className="grid gap-2">
+              <Label htmlFor="manual_year_level">Year level</Label>
+              <Select
+                value={Number.isNaN(row.year_level) ? "" : String(row.year_level)}
+                onValueChange={(value) => updateField("year_level", value ?? "")}
+              >
+                <SelectTrigger className="w-full" id="manual_year_level">
+                  <SelectValue placeholder="Select year" />
+                </SelectTrigger>
+                <SelectContent>
+                  {yearLevelOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
           {checking && <p className="text-sm text-muted-foreground">Checking student...</p>}
-          {check && <div className="flex flex-wrap items-center gap-2 text-sm"><Badge variant={check.status === "failed" ? "destructive" : "secondary"}>{statusLabel(check.status)}</Badge>{check.reasons.map((reason) => <span key={reason} className="text-destructive">{reasonLabels[reason] ?? reason}</span>)}</div>}
+          {check && <div className={`flex flex-wrap items-center gap-2 rounded-md border p-3 text-sm ${check.status === "failed" ? "border-destructive/30 bg-destructive/10" : existingStudent ? "border-amber-500/30 bg-amber-500/10" : "border-emerald-500/30 bg-emerald-500/10"}`}>
+            <Badge variant={resultBadgeVariant(check)}>{statusLabel(check.status)}</Badge>
+            {existingStudent
+              ? <span className="font-medium text-amber-700 dark:text-amber-300">A student with this student number already exists. If you want to update their information, use the update workflow instead.</span>
+              : check.status === "new" && <span className="font-medium text-emerald-700 dark:text-emerald-300">Ready to add</span>}
+            {check.reasons.map((reason) => <span key={reason} className={reason === "already_up_to_date" ? "font-medium text-emerald-700 dark:text-emerald-300" : "text-destructive"}>{reasonLabels[reason] ?? reason}</span>)}
+          </div>}
           {message && <p className="text-sm text-muted-foreground">{message}</p>}
-          <DrawerFooter className="px-0"><Button type="button" onClick={() => void commit()} disabled={checking || committing || !check || check.status === "failed"}>{committing ? "Saving..." : "Add student"}</Button><DrawerClose render={<Button type="button" variant="outline" />}>Close</DrawerClose></DrawerFooter>
+          <DialogFooter className="px-0"><Button type="button" onClick={() => void commit()} disabled={checking || committing || !check || check.status !== "new"}>{committing ? "Saving..." : "Add student"}</Button><DialogClose render={<Button type="button" variant="outline" />}>Close</DialogClose></DialogFooter>
         </div>
-      </DrawerContent>
-    </Drawer>
+      </DialogContent>
+    </Dialog>
   );
 }
