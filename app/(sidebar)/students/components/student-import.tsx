@@ -232,20 +232,20 @@ export function StudentImport() {
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="col-span-2 grid grid-cols-2 gap-2 sm:flex sm:items-center sm:gap-2">
       <Dialog open={importOpen} onOpenChange={setImportOpen}>
-        <DialogTrigger render={<Button variant="outline" size="sm" />}>
+        <DialogTrigger render={<Button variant="outline" size="sm" className="w-full sm:w-auto" />}>
           <FileUp data-icon="inline-start" />
           Import students
         </DialogTrigger>
         <DialogContent className="max-w-6xl">
-          <DialogHeader>
+          <DialogHeader className="p-4 sm:p-6">
             <DialogTitle>Import students</DialogTitle>
             <DialogDescription>
               Upload a CSV or Excel file with student_number, full_name, program_code, and year_level columns.
             </DialogDescription>
           </DialogHeader>
-          <div className="min-h-0 overflow-y-auto px-6 py-4">
+          <div className="min-h-0 overflow-y-auto px-4 py-4 sm:px-6">
             <Input
               type="file"
               accept=".csv,.xlsx,.xls"
@@ -255,9 +255,9 @@ export function StudentImport() {
               }}
             />
             {message && <p className="mt-3 text-sm text-muted-foreground">{message}</p>}
-            <div className="mt-4 flex items-center justify-between">
+            <div className="mt-4 flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-sm font-medium">Review rows before checking or committing</p>
-              <Button type="button" variant="outline" size="sm" onClick={addImportRow}>
+              <Button type="button" variant="outline" size="sm" className="self-start" onClick={addImportRow}>
                 <PlusIcon data-icon="inline-start" /> Add row
               </Button>
             </div>
@@ -298,8 +298,8 @@ export function StudentImport() {
                             {checked ? (
                               <div className="flex flex-wrap gap-1">
                                 <Badge variant={resultBadgeVariant(checked)}>{statusLabel(checked.status)}</Badge>
-                                {checked.status === "existing_with_changes" && <span className="text-xs font-medium text-amber-700 dark:text-amber-300">Existing student will be updated</span>}
-                                {(checked.status === "existing_no_changes" || checked.reasons.includes("already_up_to_date")) && <span className="text-xs font-medium text-emerald-700 dark:text-emerald-300">No database changes needed</span>}
+                                {checked.status === "existing_with_changes" && <span className="text-xs font-medium text-amber-700">Existing student will be updated</span>}
+                                {(checked.status === "existing_no_changes" || checked.reasons.includes("already_up_to_date")) && <span className="text-xs font-medium dark:text-emerald-300">No database changes needed</span>}
                                 {checked.reasons.map((reason) => <span key={reason} className="text-xs text-destructive">{reasonLabels[reason] ?? reason}</span>)}
                                 {checked.changedFields.length > 0 && <span className="text-xs text-muted-foreground">Changes: {checked.changedFields.join(", ")}</span>}
                               </div>
@@ -326,7 +326,7 @@ export function StudentImport() {
               </label>
             )}
           </div>
-          <DialogFooter>
+          <DialogFooter className="p-4 sm:p-6">
             <Button onClick={() => void reviewRows()} disabled={loading || rows.length === 0}>{loading ? "Checking..." : "Check import"}</Button>
             <Button
               onClick={() => void commitRows()}
@@ -407,10 +407,10 @@ function ManualStudent({ open, onOpenChange }: { open: boolean; onOpenChange: (o
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <Button variant="outline" size="sm" onClick={() => onOpenChange(true)}><PlusIcon data-icon="inline-start" /> Add student</Button>
+      <Button variant="outline" size="sm" className="w-full sm:w-auto" onClick={() => onOpenChange(true)}><PlusIcon data-icon="inline-start" /> Add student</Button>
       <DialogContent>
-        <DialogHeader><DialogTitle>Add student</DialogTitle><DialogDescription>Enter one student&apos;s information.</DialogDescription></DialogHeader>
-        <div className="grid gap-4 overflow-y-auto px-6 py-4">
+        <DialogHeader className="p-4 sm:p-6"><DialogTitle>Add student</DialogTitle><DialogDescription>Enter one student&apos;s information.</DialogDescription></DialogHeader>
+        <div className="grid gap-4 overflow-y-auto px-4 py-4 sm:px-6">
           <div className="grid min-w-0 gap-2"><Label htmlFor="manual_student_number">Student number</Label><Input className="w-full" id="manual_student_number" value={row.student_number} onChange={(event) => updateField("student_number", event.target.value.trim())} placeholder="2021-0001" /></div>
           <div className="grid min-w-0 gap-2"><Label htmlFor="manual_full_name">Full name</Label><Input className="w-full" id="manual_full_name" value={row.full_name} onChange={(event) => updateField("full_name", event.target.value)} /></div>
           <div className="grid min-w-0 gap-4 sm:grid-cols-2">
@@ -436,9 +436,9 @@ function ManualStudent({ open, onOpenChange }: { open: boolean; onOpenChange: (o
           {check && <div className={`flex flex-wrap items-center gap-2 rounded-md border p-3 text-sm ${check.status === "failed" ? "border-destructive/30 bg-destructive/10" : existingStudent ? "border-amber-500/30 bg-amber-500/10" : "border-emerald-500/30 bg-emerald-500/10"}`}>
             <Badge variant={resultBadgeVariant(check)}>{statusLabel(check.status)}</Badge>
             {existingStudent
-              ? <span className="font-medium text-amber-700 dark:text-amber-300">A student with this student number already exists. If you want to update their information, use the update workflow instead.</span>
-              : check.status === "new" && <span className="font-medium text-emerald-700 dark:text-emerald-300">Ready to add</span>}
-            {check.reasons.map((reason) => <span key={reason} className={reason === "already_up_to_date" ? "font-medium text-emerald-700 dark:text-emerald-300" : "text-destructive"}>{reasonLabels[reason] ?? reason}</span>)}
+              ? <span className="font-medium text-amber-700">A student with this student number already exists. If you want to update their information, use the update workflow instead.</span>
+              : check.status === "new" && <span className="font-medium text-emerald-700">Ready to add</span>}
+            {check.reasons.map((reason) => <span key={reason} className={reason === "already_up_to_date" ? "font-medium text-emerald-700" : "text-destructive"}>{reasonLabels[reason] ?? reason}</span>)}
           </div>}
           {message && <p className="text-sm text-muted-foreground">{message}</p>}
           <DialogFooter className="px-0"><Button type="button" onClick={() => void commit()} disabled={checking || committing || !check || check.status !== "new"}>{committing ? "Saving..." : "Add student"}</Button><DialogClose render={<Button type="button" variant="outline" />}>Close</DialogClose></DialogFooter>

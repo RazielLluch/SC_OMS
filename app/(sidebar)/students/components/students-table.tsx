@@ -285,7 +285,7 @@ export function DraggableRow({ row }: { row: Row<z.infer<typeof schema>> }) {
       data-state={row.getIsSelected() && "selected"}
       data-dragging={isDragging}
       ref={setNodeRef}
-      className="relative z-0 data-[dragging=true]:z-10 data-[dragging=true]:opacity-80"
+      className="relative z-0 data-[dragging=true]:opacity-80"
       style={{
         transform: CSS.Transform.toString(transform),
         transition: transition,
@@ -550,7 +550,7 @@ export function StudentsTable({
       onValueChange={(value) => setActiveTab(value)}
       className="w-full flex-col justify-start gap-6"
     >
-      <div className="flex items-center justify-between px-4 lg:px-6">
+      <div className="flex flex-col gap-3 px-4 sm:flex-row sm:items-center sm:justify-between lg:px-6">
         <Label htmlFor="view-selector" className="sr-only">
           View
         </Label>
@@ -565,7 +565,7 @@ export function StudentsTable({
           ]}
         >
           <SelectTrigger
-            className="flex w-fit @4xl/main:hidden"
+            className="flex w-full sm:w-fit @4xl/main:hidden"
             size="sm"
             id="view-selector"
           >
@@ -590,10 +590,10 @@ export function StudentsTable({
           </TabsTrigger>
           <TabsTrigger value="per-year">Per Year</TabsTrigger>
         </TabsList>
-        <div className="flex items-center gap-2">
+        <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto">
           <DropdownMenu>
             <DropdownMenuTrigger
-              render={<Button variant="outline" size="sm" />}
+              render={<Button variant="outline" size="sm" className="w-full sm:w-auto" />}
             >
               <Columns3Icon data-icon="inline-start" />
               Columns
