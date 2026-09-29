@@ -81,27 +81,25 @@ function normalizeHeader(value: unknown) {
   return String(value ?? "").trim().toLowerCase().replace(/[\s-]+/g, "_");
 }
 
-function parseRows(file: File): Promise<StudentImportRow[]> {
-  return file.arrayBuffer().then((buffer) => {
-    const workbook = XLSX.read(buffer, { type: "array", cellDates: false });
-    const sheet = workbook.Sheets[workbook.SheetNames[0]];
-    if (!sheet) throw new Error("The file has no worksheet.");
-    const records = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, {
-      defval: "",
-      raw: false,
-    });
-    return records.map((record, index) => {
-      const values = Object.fromEntries(
-        Object.entries(record).map(([key, value]) => [normalizeHeader(key), value]),
-      );
-      return {
-        row_number: index + 1,
-        student_number: String(values.student_number ?? "").trim(),
-        full_name: String(values.full_name ?? "").trim(),
-        program_code: String(values.program_code ?? "").trim().toUpperCase(),
-        year_level: Number(values.year_level),
-      };
-    });
+async function parseRows(file: File): Promise<StudentImportRow[]> {
+  const buffer = await file.arrayBuffer();
+  const workbook = XLSX.read(buffer, {type: "array", cellDates: false});
+  const sheet = workbook.Sheets[workbook.SheetNames[0]];
+  if (!sheet) throw new Error("The file has no worksheet.");
+  const records = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, {
+    defval: "",
+    raw: false,
+  });
+  return records.map((record, index) => {
+    const values = Object.fromEntries(
+      Object.entries(record).map(([key, value_1]) => [normalizeHeader(key), value_1]));
+    return {
+      row_number: index + 1,
+      student_number: String(values.student_number ?? "").trim(),
+      full_name: String(values.full_name ?? "").trim(),
+      program_code: String(values.program_code ?? "").trim().toUpperCase(),
+      year_level: Number(values.year_level),
+    };
   });
 }
 
