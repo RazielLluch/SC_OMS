@@ -155,7 +155,8 @@ export function StudentImport() {
     try {
       const extension = file.name.split(".").pop()?.toLowerCase();
       if (!extension || !["csv", "xlsx", "xls"].includes(extension)) {
-        throw new Error(reasonLabels.unsupported_file_format);
+        setMessage(reasonLabels.unsupported_file_format);
+        return;
       }
       const parsed = await parseRows(file);
       setRows(parsed.map((row) => ({ row, original: { ...row }, isAdded: false })));
