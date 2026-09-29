@@ -126,7 +126,7 @@ function SortableColumnHeader<TData>({
     <Button
       variant="ghost"
       className="-ml-3 h-8 px-3"
-      onClick={() => column.toggleSorting(sorted === "asc" ? true : false)}
+      onClick={() => column.toggleSorting(sorted === "asc")}
     >
       {title}
       {sorted === "asc" ? (
