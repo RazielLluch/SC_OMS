@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useRouter } from "next/navigation"
 import {
   closestCenter,
   DndContext,
@@ -66,6 +67,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
@@ -94,6 +104,7 @@ import {
 import { GripVerticalIcon, EllipsisVerticalIcon, Columns3Icon, ChevronDownIcon, ChevronsLeftIcon, ChevronLeftIcon, ChevronRightIcon, ChevronsRightIcon, TrendingUpIcon, ArrowDownIcon, ArrowUpIcon, ArrowUpDownIcon } from "lucide-react"
 import { StudentImport } from "@/app/(sidebar)/students/components/student-import"
 import { AnalyticsCards } from "@/app/(sidebar)/students/components/analytics-cards"
+import { deleteStudent } from "@/lib/students-actions"
 import type { Analytics } from "@/types/enums"
 
 // TODO: Implement Per Department (WIP) View for students table
@@ -114,6 +125,122 @@ type Student = z.infer<typeof schema>
 
 function getStudentProgram(student: Partial<Student>) {
   return student.program ?? student.programCode ?? student.program_code ?? ""
+}
+
+function StudentActions({ student }: { student: Student }) {
+  const router = useRouter()
+  const [open, setOpen] = React.useState(false)
+  const [deletedOpen, setDeletedOpen] = React.useState(false)
+  const [deleting, setDeleting] = React.useState(false)
+  const [error, setError] = React.useState("")
+
+  async function handleDelete() {
+    setDeleting(true)
+    setError("")
+
+    try {
+      const result = await deleteStudent(student.studentNumber)
+
+      if (!result.success) {
+        throw new Error(result.message || "Unable to delete this student.")
+      }
+
+      setOpen(false)
+      setDeletedOpen(true)
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Unable to delete this student.")
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  return (
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          render={
+            <Button
+              variant="ghost"
+              className="flex size-8 text-muted-foreground data-open:bg-muted"
+              size="icon"
+            />
+          }
+        >
+          <EllipsisVerticalIcon />
+          <span className="sr-only">Open menu</span>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-32">
+          <DropdownMenuItem>Edit</DropdownMenuItem>
+          <DropdownMenuItem>Make a copy</DropdownMenuItem>
+          <DropdownMenuItem>Favorite</DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            variant="destructive"
+            onClick={() => {
+              setError("")
+              setOpen(true)
+            }}
+          >
+            Delete
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <Dialog open={open} onOpenChange={(nextOpen) => !deleting && setOpen(nextOpen)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete student?</DialogTitle>
+            <DialogDescription>
+              This action permanently deletes the following student record:
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 px-6 text-sm">
+            <p><span className="font-medium">Name:</span> {student.fullName}</p>
+            <p><span className="font-medium">Student number:</span> {student.studentNumber}</p>
+            <p><span className="font-medium">Email:</span> {student.email}</p>
+            <p><span className="font-medium">Program:</span> {getStudentProgram(student) || "—"}</p>
+            <p><span className="font-medium">Year level:</span> {student.yearLevel}</p>
+            {error && <p className="text-destructive">{error}</p>}
+          </div>
+          <DialogFooter>
+            <DialogClose render={<Button variant="outline" disabled={deleting} />}>
+              Cancel
+            </DialogClose>
+            <Button variant="destructive" onClick={() => void handleDelete()} disabled={deleting}>
+              {deleting ? "Deleting..." : "Delete student"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={deletedOpen}
+        onOpenChange={(nextOpen) => {
+          setDeletedOpen(nextOpen)
+          if (!nextOpen) {
+            router.refresh()
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Student deleted</DialogTitle>
+            <DialogDescription>
+              {student.fullName} ({student.studentNumber}) has been deleted successfully.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="px-6 text-sm text-muted-foreground">
+            You can recover this student using the{" "}
+            <span className="font-medium text-foreground">Add student</span>{" "}
+            button. Their historical data will be added back.
+          </div>
+          <DialogFooter>
+            <DialogClose render={<Button />}>Done</DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  )
 }
 
 function SortableColumnHeader<TData>({
@@ -247,32 +374,8 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
     ),
   },
   {
-    // TODO: Actions column for student rows
     id: "actions",
-    cell: () => (
-      <DropdownMenu>
-        <DropdownMenuTrigger
-          render={
-            <Button
-              variant="ghost"
-              className="flex size-8 text-muted-foreground data-open:bg-muted"
-              size="icon"
-            />
-          }
-        >
-          <EllipsisVerticalIcon
-          />
-          <span className="sr-only">Open menu</span>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-32">
-          <DropdownMenuItem>Edit</DropdownMenuItem>
-          <DropdownMenuItem>Make a copy</DropdownMenuItem>
-          <DropdownMenuItem>Favorite</DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem variant="destructive">Delete</DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    ),
+    cell: ({ row }) => <StudentActions student={row.original} />,
   },
 ]
 

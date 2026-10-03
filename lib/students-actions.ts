@@ -37,3 +37,17 @@ export async function commitStudentImport(
 export async function createStudent(row: Omit<StudentImportRow, "row_number">) {
   return postStudents("/students", row);
 }
+
+export async function deleteStudent(studentNumber: string) {
+  const supabase = await createClient();
+  const response = await apiFetch(
+    supabase,
+    `/students/delete?student_number=${encodeURIComponent(studentNumber)}`,
+    {
+      method: "DELETE",
+      cache: "no-store",
+    },
+  );
+
+  return response.json();
+}
