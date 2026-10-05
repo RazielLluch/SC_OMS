@@ -551,6 +551,22 @@ export function StudentsTable({
           : "the selected year level"
         : "all departments and programs"
 
+  const programCohorts = React.useMemo(() => {
+    if (activeTab !== "per-year") {
+      return undefined
+    }
+
+    const counts = new Map<string, number>()
+    filteredData.forEach((student) => {
+      const program = getStudentProgram(student).trim()
+      if (program) {
+        counts.set(program, (counts.get(program) ?? 0) + 1)
+      }
+    })
+
+    return Array.from(counts, ([program, count]) => ({ program, count }))
+  }, [activeTab, filteredData])
+
   React.useEffect(() => {
     setPagination((current) => ({ ...current, pageIndex: 0 }))
   }, [activeTab, programFilter, departmentFilter, yearLevelFilter])
@@ -675,7 +691,11 @@ export function StudentsTable({
   }
   return (
     <StudentPageActivityContext.Provider value={{ setTransactionActive }}>
-      <AnalyticsCards data={viewAnalytics} context={viewContext} />
+      <AnalyticsCards
+        data={viewAnalytics}
+        context={viewContext}
+        programCohorts={programCohorts}
+      />
       <Tabs
       value={activeTab}
       onValueChange={(value) => setActiveTab(value)}
