@@ -104,6 +104,10 @@ import {
 import { GripVerticalIcon, EllipsisVerticalIcon, Columns3Icon, ChevronDownIcon, ChevronsLeftIcon, ChevronLeftIcon, ChevronRightIcon, ChevronsRightIcon, TrendingUpIcon, ArrowDownIcon, ArrowUpIcon, ArrowUpDownIcon } from "lucide-react"
 import { StudentImport } from "@/app/(sidebar)/students/components/student-import"
 import { AnalyticsCards } from "@/app/(sidebar)/students/components/analytics-cards"
+import {
+  StudentPageActivityContext,
+  useStudentPageActivity,
+} from "@/app/(sidebar)/students/components/student-page-activity"
 import { deleteStudent } from "@/lib/students-actions"
 import type { Analytics } from "@/types/enums"
 
@@ -129,10 +133,15 @@ function getStudentProgram(student: Partial<Student>) {
 
 function StudentActions({ student }: { student: Student }) {
   const router = useRouter()
+  const { setTransactionActive } = useStudentPageActivity()
   const [open, setOpen] = React.useState(false)
   const [deletedOpen, setDeletedOpen] = React.useState(false)
   const [deleting, setDeleting] = React.useState(false)
   const [error, setError] = React.useState("")
+
+  React.useEffect(() => {
+    setTransactionActive(open || deleting || deletedOpen)
+  }, [deletedOpen, deleting, open, setTransactionActive])
 
   async function handleDelete() {
     setDeleting(true)
@@ -409,7 +418,9 @@ export function StudentsTable({
   data: z.infer<typeof schema>[]
   analytics: Analytics
 }) {
+  const router = useRouter()
   const [data, setData] = React.useState(() => initialData)
+  const [transactionActive, setTransactionActive] = React.useState(false)
   const [activeTab, setActiveTab] = React.useState("outline")
   const [programFilter, setProgramFilter] = React.useState(() => {
     const firstProgram = initialData.find((student) => getStudentProgram(student).trim())
@@ -438,6 +449,23 @@ export function StudentsTable({
     useSensor(TouchSensor, {}),
     useSensor(KeyboardSensor, {})
   )
+
+  React.useEffect(() => {
+    setData(initialData)
+  }, [initialData])
+
+  React.useEffect(() => {
+    if (transactionActive) return
+
+    const refreshIfVisible = () => {
+      if (document.visibilityState === "visible") {
+        router.refresh()
+      }
+    }
+    const intervalId = window.setInterval(refreshIfVisible, 30_000)
+    return () => window.clearInterval(intervalId)
+  }, [router, transactionActive])
+
   const filteredData = React.useMemo(() => {
     if (activeTab === "per-program") {
       const value = programFilter.trim().toLowerCase()
@@ -646,7 +674,7 @@ export function StudentsTable({
     }
   }
   return (
-    <>
+    <StudentPageActivityContext.Provider value={{ setTransactionActive }}>
       <AnalyticsCards data={viewAnalytics} context={viewContext} />
       <Tabs
       value={activeTab}
@@ -775,7 +803,7 @@ export function StudentsTable({
         </div>,
       )}
     </Tabs>
-    </>
+    </StudentPageActivityContext.Provider>
   )
 }
 const chartData = [

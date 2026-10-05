@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
 import * as XLSX from "xlsx";
 import { FileUp, PlusIcon } from "lucide-react";
 
@@ -26,6 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { checkStudentImport, commitStudentImport, type StudentImportRow } from "@/lib/students-actions";
+import { useStudentPageActivity } from "@/app/(sidebar)/students/components/student-page-activity";
 
 type ImportResultRow = {
   rowNumber: number;
@@ -142,6 +144,8 @@ function resultBadgeVariant(result: ImportResultRow) {
 }
 
 export function StudentImport() {
+  const router = useRouter();
+  const { setTransactionActive } = useStudentPageActivity();
   const [rows, setRows] = React.useState<DraftImportRow[]>([]);
   const [result, setResult] = React.useState<ImportResult | null>(null);
   const [message, setMessage] = React.useState("");
@@ -149,6 +153,10 @@ export function StudentImport() {
   const [updateExisting, setUpdateExisting] = React.useState(false);
   const [manualOpen, setManualOpen] = React.useState(false);
   const [importOpen, setImportOpen] = React.useState(false);
+
+  React.useEffect(() => {
+    setTransactionActive(importOpen || manualOpen || loading);
+  }, [importOpen, loading, manualOpen, setTransactionActive]);
 
   async function handleFile(file: File) {
     setMessage("");
@@ -185,9 +193,10 @@ export function StudentImport() {
     setMessage("");
     try {
       await commitStudentImport(rows.map(({ row }) => row), updateExisting);
-      setMessage("Students imported successfully. Refresh the page to see the changes.");
+      setMessage("Students imported successfully.");
       setRows([]);
       setResult(null);
+      router.refresh();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Unable to import students.");
     } finally {
@@ -343,6 +352,8 @@ export function StudentImport() {
 }
 
 function ManualStudent({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+  const router = useRouter();
+  const { setTransactionActive } = useStudentPageActivity();
   const [committing, setCommitting] = React.useState(false);
   const [message, setMessage] = React.useState("");
   const [row, setRow] = React.useState<Omit<StudentImportRow, "row_number">>({
@@ -357,6 +368,10 @@ function ManualStudent({ open, onOpenChange }: { open: boolean; onOpenChange: (o
     && row.program_code.length > 0 && Number.isInteger(row.year_level) && row.year_level > 0;
   const checking = complete && check === null;
   const existingStudent = check?.status === "existing_no_changes" || check?.status === "existing_with_changes";
+
+  React.useEffect(() => {
+    setTransactionActive(open || committing);
+  }, [committing, open, setTransactionActive]);
 
   React.useEffect(() => {
     if (!open || !complete) {
@@ -394,9 +409,10 @@ function ManualStudent({ open, onOpenChange }: { open: boolean; onOpenChange: (o
     setMessage("");
     try {
       await commitStudentImport([{ row_number: 1, ...row }], false);
-      setMessage("Student added successfully. Refresh the page to see the change.");
+      setMessage("Student added successfully.");
       setRow({ student_number: "", full_name: "", program_code: "", year_level: Number.NaN });
       setCheck(null);
+      router.refresh();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Unable to add student.");
     } finally {
