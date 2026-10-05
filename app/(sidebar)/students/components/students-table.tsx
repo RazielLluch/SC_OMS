@@ -454,6 +454,12 @@ export function StudentsTable({
     setData(initialData)
   }, [initialData])
 
+  const programOptions = React.useMemo(
+    () => [...new Set(data.map(getStudentProgram).map((program) => program.trim()).filter(Boolean))]
+      .sort((a, b) => a.localeCompare(b)),
+    [data],
+  )
+
   React.useEffect(() => {
     if (transactionActive) return
 
@@ -784,7 +790,22 @@ export function StudentsTable({
       {renderFilteredContent("per-program",
         <div className="flex items-center gap-3">
           <Label htmlFor="program-filter">Program</Label>
-          <Input id="program-filter" value={programFilter} onChange={(event) => setProgramFilter(event.target.value)} placeholder="e.g. BSCS" className="max-w-sm" />
+          <Select
+            value={programFilter}
+            onValueChange={(value) => value && setProgramFilter(value)}
+            items={programOptions.map((program) => ({ label: program, value: program }))}
+          >
+            <SelectTrigger id="program-filter" className="w-40">
+              <SelectValue placeholder="Select program" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                {programOptions.map((program) => (
+                  <SelectItem key={program} value={program}>{program}</SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
         </div>,
       )}
       {renderFilteredContent("per-department",
