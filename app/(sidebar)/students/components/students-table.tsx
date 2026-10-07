@@ -447,7 +447,7 @@ export function StudentsTable({
   ])
   const [pagination, setPagination] = React.useState({
     pageIndex: 0,
-    pageSize: 10,
+    pageSize: 50,
   })
   const sortableId = React.useId()
   const sensors = useSensors(
@@ -670,7 +670,7 @@ export function StudentsTable({
           <Select
             value={`${table.getState().pagination.pageSize}`}
             onValueChange={(value) => table.setPageSize(Number(value))}
-            items={[10, 20, 30, 40, 50].map((pageSize) => ({
+            items={[50, 100, 250, 500, 1000].map((pageSize) => ({
               label: `${pageSize}`,
               value: `${pageSize}`,
             }))}
@@ -680,7 +680,7 @@ export function StudentsTable({
             </SelectTrigger>
             <SelectContent side="top">
               <SelectGroup>
-                {[10, 20, 30, 40, 50].map((pageSize) => (
+                {[50, 100, 250, 500, 1000].map((pageSize) => (
                   <SelectItem key={pageSize} value={`${pageSize}`}>{pageSize}</SelectItem>
                 ))}
               </SelectGroup>
