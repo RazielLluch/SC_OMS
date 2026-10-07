@@ -101,7 +101,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs"
-import { GripVerticalIcon, EllipsisVerticalIcon, Columns3Icon, ChevronDownIcon, ChevronsLeftIcon, ChevronLeftIcon, ChevronRightIcon, ChevronsRightIcon, TrendingUpIcon, ArrowDownIcon, ArrowUpIcon, ArrowUpDownIcon } from "lucide-react"
+import { GripVerticalIcon, EllipsisVerticalIcon, Columns3Icon, ChevronDownIcon, ChevronsLeftIcon, ChevronLeftIcon, ChevronRightIcon, ChevronsRightIcon, TrendingUpIcon, ArrowDownIcon, ArrowUpIcon, ArrowUpDownIcon, Loader2Icon } from "lucide-react"
 import { StudentImport } from "@/app/(sidebar)/students/components/student-import"
 import { AnalyticsCards } from "@/app/(sidebar)/students/components/analytics-cards"
 import {
@@ -110,6 +110,7 @@ import {
 } from "@/app/(sidebar)/students/components/student-page-activity"
 import { deleteStudent } from "@/lib/students-actions"
 import type { Analytics } from "@/types/enums"
+import type { Semester } from "@/types/semesters"
 
 // TODO: Implement Per Department (WIP) View for students table
 
@@ -414,11 +415,16 @@ export function DraggableRow({ row }: { row: Row<z.infer<typeof schema>> }) {
 export function StudentsTable({
                             data: initialData,
                             analytics: initialAnalytics,
+                            semesters,
+                            selectedSemester,
                           }: {
   data: z.infer<typeof schema>[]
   analytics: Analytics
+  semesters: Semester[]
+  selectedSemester?: { schoolYear: string; term: string }
 }) {
   const router = useRouter()
+  const [isPending, startTransition] = React.useTransition()
   const [data, setData] = React.useState(() => initialData)
   const [transactionActive, setTransactionActive] = React.useState(false)
   const [activeTab, setActiveTab] = React.useState("outline")
@@ -449,6 +455,34 @@ export function StudentsTable({
     useSensor(TouchSensor, {}),
     useSensor(KeyboardSensor, {})
   )
+
+  const selectedSchoolYear = selectedSemester?.schoolYear ?? ""
+  const selectedTerm = selectedSemester?.term ?? ""
+
+  function updateSemester(schoolYear: string, term: string) {
+    if (schoolYear === selectedSchoolYear && term === selectedTerm) {
+      return
+    }
+
+    const params = new URLSearchParams(window.location.search)
+    if (schoolYear) {
+      params.set("schoolYear", schoolYear)
+    } else {
+      params.delete("schoolYear")
+    }
+    if (term) {
+      params.set("term", term)
+    } else {
+      params.delete("term")
+    }
+    startTransition(() => {
+      router.push(`?${params.toString()}`)
+    })
+  }
+
+  const selectedSchoolYearTerms = semesters.find(
+    (semester) => semester.schoolYear === selectedSchoolYear,
+  )?.terms ?? []
 
   React.useEffect(() => {
     setData(initialData)
@@ -697,16 +731,17 @@ export function StudentsTable({
   }
   return (
     <StudentPageActivityContext.Provider value={{ setTransactionActive }}>
-      <AnalyticsCards
-        data={viewAnalytics}
-        context={viewContext}
-        programCohorts={programCohorts}
-      />
-      <Tabs
-      value={activeTab}
-      onValueChange={(value) => setActiveTab(value)}
-      className="w-full flex-col justify-start gap-6"
-    >
+      <div className="relative flex flex-col gap-6" aria-busy={isPending}>
+        <AnalyticsCards
+          data={viewAnalytics}
+          context={viewContext}
+          programCohorts={programCohorts}
+        />
+        <Tabs
+        value={activeTab}
+        onValueChange={(value) => setActiveTab(value)}
+        className="w-full flex-col justify-start gap-6"
+      >
       <div className="flex flex-col gap-3 px-4 sm:flex-row sm:items-center sm:justify-between lg:px-6">
         <Label htmlFor="view-selector" className="sr-only">
           View
@@ -748,6 +783,61 @@ export function StudentsTable({
           <TabsTrigger value="per-year">Per Year</TabsTrigger>
         </TabsList>
         <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto">
+          <div className="col-span-2 flex items-center gap-2 sm:col-span-1">
+            <Label htmlFor="school-year-filter" className="sr-only">School year</Label>
+            <Select
+              value={selectedSchoolYear}
+              onValueChange={(value) => {
+                if (!value) return
+                const nextSemester = semesters.find((semester) => semester.schoolYear === value)
+                const nextTerm = nextSemester?.terms.find((term) => term.isActive)?.term
+                  ?? nextSemester?.terms[0]?.term
+                  ?? ""
+                updateSemester(value, nextTerm)
+              }}
+              items={semesters.map((semester) => ({
+                label: semester.schoolYear,
+                value: semester.schoolYear,
+              }))}
+            >
+              <SelectTrigger id="school-year-filter" className="w-full sm:w-36">
+                <SelectValue placeholder="School year" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  {semesters.map((semester) => (
+                    <SelectItem key={semester.schoolYear} value={semester.schoolYear}>
+                      {semester.schoolYear}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center gap-2">
+            <Label htmlFor="term-filter" className="sr-only">Term</Label>
+            <Select
+              value={selectedTerm}
+              onValueChange={(value) => value && updateSemester(selectedSchoolYear, value)}
+              items={selectedSchoolYearTerms.map((term) => ({
+                label: term.term,
+                value: term.term,
+              }))}
+            >
+              <SelectTrigger id="term-filter" className="w-full sm:w-32">
+                <SelectValue placeholder="Term" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  {selectedSchoolYearTerms.map((term) => (
+                    <SelectItem key={term.term} value={term.term}>
+                      {term.term}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
           <DropdownMenu>
             <DropdownMenuTrigger
               render={<Button variant="outline" size="sm" className="w-full sm:w-auto" />}
@@ -843,7 +933,16 @@ export function StudentsTable({
           </Select>
         </div>,
       )}
-    </Tabs>
+      </Tabs>
+      {isPending && (
+        <div className="absolute inset-0 z-20 flex items-center justify-center bg-background/60 backdrop-blur-[1px]">
+          <div className="flex items-center gap-2 rounded-full border bg-background px-4 py-2 text-sm font-medium shadow-sm">
+            <Loader2Icon className="size-4 animate-spin" />
+            Loading students...
+          </div>
+        </div>
+      )}
+    </div>
     </StudentPageActivityContext.Provider>
   )
 }
