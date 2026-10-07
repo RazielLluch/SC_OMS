@@ -412,7 +412,7 @@ function ManualStudent({ open, onOpenChange }: { open: boolean; onOpenChange: (o
       setMessage("Student added successfully.");
       setRow({ student_number: "", full_name: "", program_code: "", year_level: Number.NaN });
       setCheck(null);
-      router.refresh();
+      window.location.reload();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Unable to add student.");
     } finally {
